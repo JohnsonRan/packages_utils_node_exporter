@@ -1,0 +1,73 @@
+name: Update Package Version
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天运行
+  workflow_dispatch:      # 允许手动触发
+
+env:
+  REPO_NAME: "prometheus/node_exporter"
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get latest version
+      id: version
+      run: |
+        pkg_version=$(curl -s "https://api.github.com/repos/${REPO_NAME}/releases/latest" | grep -oP '(?<="tag_name": ")[^"]*' | sed 's/^v//')
+        echo "pkg_version=${pkg_version}" >> $GITHUB_OUTPUT
+        
+    - name: Download and calculate hash
+      id: hash
+      run: |
+        pkg_tarball="speedtest-ex-${pkg_version}.tar.gz"
+        curl -skLo "${pkg_tarball}" "https://codeload.github.com/${REPO_NAME}/tar.gz/v${pkg_version}"
+        pkg_hash=$(sha256sum "${pkg_tarball}" | awk '{print $1}')
+        echo "pkg_hash=${pkg_hash}" >> $GITHUB_OUTPUT
+        rm -f "${pkg_tarball}"
+      env:
+        pkg_version: ${{ steps.version.outputs.pkg_version }}
+
+    - name: Update Makefile
+      id: update
+      run: |
+        # 保存当前版本号用于比较
+        old_version=$(grep "PKG_VERSION:=" Makefile | cut -d'=' -f2)
+        # 更新版本号和哈希值
+        sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${pkg_version}/" Makefile
+        sed -i "s/PKG_HASH:=.*/PKG_HASH:=${pkg_hash}/" Makefile
+        
+        # 检查是否有变更
+        if ! git diff --quiet; then
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        fi
+      env:
+        pkg_version: ${{ steps.version.outputs.pkg_version }}
+        pkg_hash: ${{ steps.hash.outputs.pkg_hash }}
+
+    - name: Commit changes
+      if: steps.update.outputs.has_changes == 'true'
+      run: |
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+        git add Makefile
+        git commit -m "speedtest-ex: Version ${pkg_version}"
+        git push
+      env:
+        pkg_version: ${{ steps.version.outputs.pkg_version }}
+
+    - name: Delete workflow runs
+      uses: Mattraks/delete-workflow-runs@main
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
+        retain_days: 0
+        keep_minimum_runs: 2
