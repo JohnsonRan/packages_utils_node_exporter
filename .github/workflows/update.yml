@@ -26,7 +26,7 @@ jobs:
     - name: Download and calculate hash
       id: hash
       run: |
-        pkg_tarball="speedtest-ex-${pkg_version}.tar.gz"
+        pkg_tarball="node_exporter-${pkg_version}.tar.gz"
         curl -skLo "${pkg_tarball}" "https://codeload.github.com/${REPO_NAME}/tar.gz/v${pkg_version}"
         pkg_hash=$(sha256sum "${pkg_tarball}" | awk '{print $1}')
         echo "pkg_hash=${pkg_hash}" >> $GITHUB_OUTPUT
@@ -59,7 +59,7 @@ jobs:
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
         git add Makefile
-        git commit -m "speedtest-ex: Version ${pkg_version}"
+        git commit -m "node_exporter: Version ${pkg_version}"
         git push
       env:
         pkg_version: ${{ steps.version.outputs.pkg_version }}
