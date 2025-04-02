@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=node_exporter
-PKG_VERSION:=1.8.2
+PKG_VERSION:=1.9.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/prometheus/node_exporter/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=f615c70be816550498dd6a505391dbed1a896705eff842628de13a1fa7654e8f
+PKG_HASH:=ac80b13ced462e88f243ad5e98c12bbcee2628bf552c0d19bb5ae125ce09730d
 
 PKG_MAINTAINER:=JohnsonRan <me@ihtw.moe>
 PKG_LICENSE:=Apache-2.0
